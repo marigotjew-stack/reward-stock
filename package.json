@@ -1,0 +1,8 @@
+{
+  "name": "reward-stock",
+  "version": "1.0.0",
+  "dependencies": {
+    "cloudinary": "^2.5.1",
+    "mongodb": "^6.10.0"
+  }
+}
