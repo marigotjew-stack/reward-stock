@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>คลังของรางวัล</title>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+#login{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:1rem;background:var(--bg)}
+#login[hidden]{display:none}
+textarea.inp{resize:vertical}
+:root{--bg:#f7f2e5;--tx:#8C8985;--ink:#66635f;--g:#77bb78;--gh:#c7e299;--b:#8dbaed;--bh:#adcff1;--y:#fccf61;--yh:#ffe495;--r:#f8aab6;--rh:#fcc2cc;
+--out:8px 8px 16px #dcdbd3,-8px -8px 16px #ffffff;--in:inset 4px 4px 8px #dcdbd3,inset -4px -4px 8px #ffffff}
+body{font-family:'Mali',sans-serif;background:var(--bg);color:var(--tx)}
+h1,h2,.b{font-weight:700;color:var(--ink)}
+h1.b,h2.b{font-weight:700}
+.card{background:#fff;border-radius:24px;box-shadow:var(--out)}
+.btn{border-radius:20px;padding:.6rem 1.1rem;font-weight:700;color:#fff;background:var(--g);box-shadow:var(--out);transition:background .15s,box-shadow .15s;cursor:pointer;border:0}
+.btn:hover{background:var(--gh)} .btn:active{box-shadow:var(--in)}
+.btn.blue{background:var(--b)} .btn.blue:hover{background:var(--bh)}
+.btn.plain{background:#fff;color:var(--tx)} .btn.plain:hover{background:#faf7ee}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{border-radius:20px;padding:.4rem 1rem;background:#fff;box-shadow:var(--out);cursor:pointer;border:0;color:var(--tx);font-family:inherit}
+.chip.on{box-shadow:var(--in);color:var(--ink);font-weight:700}
+.inp{width:100%;border-radius:20px;padding:.65rem 1rem;background:#fff;border:1px solid #8C8985;box-shadow:var(--in);font-family:inherit;color:var(--ink)}
+.inp:focus,.btn:focus-visible,.chip:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+.badge{border-radius:14px;padding:.15rem .7rem;font-size:.8rem;font-weight:700;color:#6b5a1f}
+.s-Available{background:var(--gh);color:#3f6b40} .s-Low{background:var(--y)} .s-Out,.s-Expired{background:var(--r);color:#7a3040} .s-Soon{background:var(--yh)}
+dialog.modal{border:0;border-radius:24px;padding:1.75rem 1.75rem 1.5rem;width:min(92vw,440px);max-height:92vh;overflow:auto;background:#fff;box-shadow:var(--out),0 20px 50px rgba(100,90,70,.25);color:var(--tx)}
+dialog.modal[open]{animation:pop .18s ease-out}
+@keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}}
+.modal h2{font-size:1.35rem;font-weight:700;color:var(--ink);margin-bottom:.25rem}
+.modal .sub{font-size:.85rem;margin-bottom:1rem}
+.modal .fld{display:block;font-size:.9rem;font-weight:700;color:var(--ink);margin-bottom:1rem}
+.modal .fld .inp{display:block;margin-top:.4rem;font-weight:400}
+.modal .acts{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid #ece8dc}
+.inp[type=file]{padding:.45rem .6rem;cursor:pointer}
+.inp::file-selector-button{margin-right:.8rem;border:0;border-radius:16px;padding:.4rem .9rem;background:var(--b);color:#fff;font-family:inherit;font-weight:700;cursor:pointer}
+.inp::file-selector-button:hover{background:var(--bh)}
+.preview{display:none;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:20px;box-shadow:var(--in);margin-top:.6rem}
+dialog::backdrop{background:rgba(120,110,90,.35)}
+.thumb{aspect-ratio:4/3;object-fit:cover;width:100%;border-radius:20px;box-shadow:var(--in);background:#f3efe2}
+.grid-b{display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+td,th{padding:.7rem .9rem;text-align:left} tbody tr{border-top:1px solid #ece8dc}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-6xl mx-auto p-4 sm:p-8">
+  <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <h1 class="text-3xl">คลังของรางวัล</h1>
+    <div class="flex gap-3">
+      <button class="chip on" data-tab="stock">คลังสินค้า</button>
+      <button class="chip" data-tab="history">ประวัติ</button>
+      <button class="btn" id="btnIn">+ รับเข้า</button>
+      <button class="chip" id="btnLogout">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <section id="stock">
+    <div class="flex flex-wrap gap-3 mb-6 items-center">
+      <input id="q" class="inp" style="max-width:320px" placeholder="ค้นหาชื่อของรางวัล" aria-label="ค้นหา">
+      <button class="chip on" data-f="all">ทั้งหมด</button>
+      <button class="chip" data-f="available">พร้อมแจก</button>
+      <button class="chip" data-f="expiring">ใกล้หมดอายุ</button>
+    </div>
+    <div id="grid" class="grid-b"></div>
+  </section>
+
+  <section id="history" hidden>
+    <input id="hq" class="inp mb-5" style="max-width:360px" placeholder="ค้นหาชื่อผู้รับ หรือชื่อของรางวัล" aria-label="ค้นหาประวัติ">
+    <div class="card overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="b"><tr><th>วันที่-เวลา</th><th>ของรางวัล</th><th>รายการ</th><th>จำนวน</th><th>ผู้เบิก / ผู้รับเข้า</th><th>หมายเหตุ</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<dialog id="dIn" class="modal">
+  <form id="fIn">
+    <h2>รับของรางวัลเข้าคลัง</h2><p class="sub">เพิ่มของใหม่เข้าสต๊อก</p>
+    <label class="fld">ชื่อของรางวัล<input name="name" class="inp" placeholder="เช่น หูฟังบลูทูธ" required></label>
+    <label class="fld">รูปภาพ<input name="image" type="file" accept="image/*" class="inp"><img id="prev" class="preview" alt="ตัวอย่างรูป"></label>
+    <label class="fld">จำนวน<input name="stock" type="number" min="1" value="1" class="inp" required></label>
+    <label class="fld">วันหมดอายุ / สิ้นสุดประกัน<input name="warranty_date" type="date" class="inp"></label>
+    <label class="fld">วันที่-เวลารับเข้า<input name="when" type="datetime-local" class="inp" required></label>
+    <label class="fld">ผู้รับเข้า<input name="recipient" class="inp" placeholder="ชื่อผู้ที่รับของเข้า" required></label>
+    <label class="fld">หมายเหตุ<textarea name="note" class="inp" rows="2" maxlength="300" placeholder="เช่น ซื้อจากร้านไหน / ใบเสร็จเลขที่"></textarea></label>
+    <div class="acts"><button type="button" class="btn plain" data-close>ยกเลิก</button><button class="btn">บันทึก</button></div>
+  </form>
+</dialog>
+
+<dialog id="dOut" class="modal">
+  <form id="fOut">
+    <h2 id="outTitle"></h2>
+    <p id="outLeft" class="sub"></p>
+    <label class="fld">จำนวนที่แจก<input name="quantity" type="number" min="1" value="1" class="inp" required></label>
+    <label class="fld">วันที่-เวลาที่เบิก<input name="when" type="datetime-local" class="inp" required></label>
+    <label class="fld">ผู้เบิก<input name="recipient" class="inp" placeholder="ชื่อผู้ที่มาเบิก" required></label>
+    <label class="fld">หมายเหตุ<textarea name="note" class="inp" rows="2" maxlength="300" placeholder="เช่น แจกเป็นรางวัลกิจกรรมประจำเดือน"></textarea></label>
+    <div class="acts"><button type="button" class="btn plain" data-close>ยกเลิก</button><button class="btn blue">ยืนยันการแจก</button></div>
+  </form>
+</dialog>
+
+<div id="login" hidden>
+  <form id="fLogin" class="card p-8 w-full" style="max-width:380px">
+    <h2 class="b text-2xl mb-1">เข้าสู่ระบบผู้ดูแล</h2>
+    <p class="text-sm mb-5">กรอกรหัสผ่านเพื่อจัดการคลังของรางวัล</p>
+    <label class="block b text-sm">รหัสผ่าน<input id="pw" type="password" class="inp mt-2" autocomplete="current-password" required></label>
+    <p id="loginErr" class="text-sm mt-2" style="color:#c0566a" hidden></p>
+    <button class="btn w-full mt-5">เข้าสู่ระบบ</button>
+  </form>
+</div>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 card px-5 py-3 b" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(d,t)=>d?new Date(d).toLocaleString('th-TH',t?{dateStyle:'medium',timeStyle:'short'}:{dateStyle:'medium'}):'-';
+let token='';try{token=localStorage.getItem('rs_token')||''}catch{}
+const showLogin=()=>{$('#login').hidden=false;$('#pw').focus()};
+const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+const iso=v=>v?new Date(v).toISOString():'';
+const api=async(u,o={})=>{let r;try{r=await fetch('/api'+u,{...o,headers:{...o.headers,Authorization:'Bearer '+token}})}catch{throw new Error('ติดต่อเซิร์ฟเวอร์ไม่ได้ ต้องเปิดผ่าน npm run dev หรือลิงก์ Vercel (ห้ามดับเบิลคลิกไฟล์ index.html)')}
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&u!=='/login'){token='';try{localStorage.removeItem('rs_token')}catch{};showLogin()}
+  if(!r.ok)throw new Error(j.error||('เซิร์ฟเวอร์ตอบกลับผิดปกติ (รหัส '+r.status+')'));return j};
+let rewards=[],filter='all',current=null,tt;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2800)};
+const debounce=(f,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}};
+const LBL={Available:['พร้อมแจก','Available'],'Low Stock':['ใกล้หมด','Low'],'Out of Stock':['ของหมด','Out'],Expired:['หมดอายุ','Expired']};
+
+function card(r){
+  const [l,c]=LBL[r.status];
+  const days=r.warranty_date?Math.ceil((new Date(r.warranty_date)-Date.now())/864e5):null;
+  const soon=days!==null&&days>=0&&days<=30;
+  const blocked=r.stock<=0||r.status==='Expired';
+  return `<article class="card p-4 flex flex-col gap-3">
+    ${r.image_url?`<img class="thumb" src="${esc(r.image_url)}" alt="${esc(r.name)}" loading="lazy">`:'<div class="thumb"></div>'}
+    <h2 class="text-lg leading-snug">${esc(r.name)}</h2>
+    ${r.note?`<p class="text-sm">${esc(r.note)}</p>`:''}
+    <div class="flex flex-wrap gap-2"><span class="badge s-${c}">${l}</span>${soon?`<span class="badge s-Soon">อีก ${days} วันหมดอายุ</span>`:''}</div>
+    <div class="flex justify-between text-sm"><span>คงเหลือ <b class="b text-xl">${r.stock}</b></span><span>${fmt(r.warranty_date)}</span></div>
+    <button class="btn blue" data-out="${r._id}" ${blocked?'disabled':''}>แจก</button>
+  </article>`;
+}
+async function loadRewards(){
+  try{
+    rewards=await api(`/rewards?q=${encodeURIComponent($('#q').value)}&filter=${filter}`);
+    $('#grid').innerHTML=rewards.map(card).join('')||'<p class="col-span-full">ยังไม่มีของรางวัล กด “+ รับเข้า” เพื่อเพิ่มรายการแรก</p>';
+  }catch(e){toast(e.message)}
+}
+async function loadHistory(){
+  try{
+    const rows=await api(`/transactions?q=${encodeURIComponent($('#hq').value)}`);
+    $('#rows').innerHTML=rows.map(t=>`<tr><td>${fmt(t.timestamp,1)}</td><td>${esc(t.name||'(ถูกลบ)')}</td>
+      <td><span class="badge ${t.type==='IN'?'s-Available':'s-Soon'}">${t.type==='IN'?'รับเข้า':'จ่ายออก'}</span></td><td class="b">${t.quantity}</td><td>${esc(t.recipient)||'-'}</td><td>${esc(t.note)||'-'}</td></tr>`).join('')||'<tr><td colspan="6">ไม่พบรายการ</td></tr>';
+  }catch(e){toast(e.message)}
+}
+// Resize image in browser (keeps upload small, Vercel body limit is ~4.5 MB)
+const shrink=f=>new Promise(res=>{const i=new Image();i.onload=()=>{const k=Math.min(1,1000/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',.8)};i.onerror=()=>res(f);i.src=URL.createObjectURL(f)});
+const toBase64=blob=>new Promise(res=>{const r=new FileReader();r.onloadend=()=>res(r.result);r.readAsDataURL(blob)});
+
+$$('[data-tab]').forEach(b=>b.onclick=()=>{$$('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));$('#stock').hidden=b.dataset.tab!=='stock';$('#history').hidden=b.dataset.tab!=='history';b.dataset.tab==='history'?loadHistory():loadRewards()});
+$$('[data-f]').forEach(b=>b.onclick=()=>{filter=b.dataset.f;$$('[data-f]').forEach(x=>x.classList.toggle('on',x===b));loadRewards()});
+$$('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+$('#q').oninput=debounce(loadRewards); $('#hq').oninput=debounce(loadHistory);
+$('#fIn').image.onchange=e=>{const f=e.target.files[0],p=$('#prev');p.style.display=f?'block':'none';if(f)p.src=URL.createObjectURL(f)};
+$('#btnIn').onclick=()=>{$('#fIn').reset();$('#fIn').when.value=nowLocal();$('#prev').style.display='none';$('#dIn').showModal()};
+$('#grid').onclick=e=>{const b=e.target.closest('[data-out]');if(!b)return;current=rewards.find(r=>r._id===b.dataset.out);
+  $('#outTitle').textContent='แจก: '+current.name;$('#outLeft').textContent='คงเหลือ '+current.stock+' ชิ้น';
+  const f=$('#fOut');f.reset();f.quantity.max=current.stock;f.when.value=nowLocal();$('#dOut').showModal()};
+
+$('#fIn').onsubmit=async e=>{e.preventDefault();const f=e.target,btn=f.querySelector('.btn:not(.plain)');btn.disabled=true;
+  try{
+    let imgData='';
+    if(f.image.files[0]){const blob=await shrink(f.image.files[0]);imgData=await toBase64(blob)}
+    const payload={name:f.name.value,stock:f.stock.value,warranty_date:f.warranty_date.value,recipient:f.recipient.value,note:f.note.value,date:iso(f.when.value),image:imgData};
+    await api('/rewards',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('#dIn').close();toast('รับเข้าเรียบร้อย');loadRewards()
+  }catch(err){toast(err.message)}finally{btn.disabled=false}};
+$('#fOut').onsubmit=async e=>{e.preventDefault();const f=e.target;
+  try{await api(`/rewards/${current._id}/dispense`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quantity:f.quantity.value,recipient:f.recipient.value,note:f.note.value,date:iso(f.when.value)})});
+    $('#dOut').close();toast('บันทึกการแจกเรียบร้อย');loadRewards()}catch(err){toast(err.message)}};
+$('#fLogin').onsubmit=async e=>{e.preventDefault();$('#loginErr').hidden=true;
+  try{const j=await api('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('#pw').value.trim()})});
+    token=j.token;try{localStorage.setItem('rs_token',token)}catch{};$('#pw').value='';$('#login').hidden=true;loadRewards()}
+  catch(err){$('#loginErr').textContent=err.message;$('#loginErr').hidden=false}};
+$('#btnLogout').onclick=()=>{token='';try{localStorage.removeItem('rs_token')}catch{};showLogin()};
+(async()=>{let need=false;try{need=(await api('/config')).requireLogin}catch(e){toast(e.message)}
+  $('#btnLogout').hidden=!need;need&&!token?showLogin():loadRewards()})();
+</script>
+</body>
+</html>
